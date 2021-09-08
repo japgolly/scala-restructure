@@ -1,15 +1,16 @@
 package japgolly.scala_restructure
 
 import japgolly.scala_restructure.TestUtil._
-import sourcecode.Line
 import utest._
 
-object AlignDirectoriesToPackagesTest extends TestSuite {
+object AlignDirectoriesToPackagesTest extends TestSuite with EngineTester {
+
+  override protected val engine = AlignDirectoriesToPackages
 
   override def tests = Tests {
 
     // -----------------------------------------------------------------------------------------------------------------
-    "simple" - test(
+    "simple" - assertEngineSuccess(
       "a/b/S.scala" ->
         """// asd
           |/* asd */
@@ -22,7 +23,7 @@ object AlignDirectoriesToPackagesTest extends TestSuite {
     )(Cmd.Rename("a/b/S.scala", "d/ee/f/S.scala"))
 
     // -----------------------------------------------------------------------------------------------------------------
-    "root" - test(
+    "root" - assertEngineSuccess(
       "a/b/S.scala" ->
         """class Y
           |class Z
@@ -30,7 +31,7 @@ object AlignDirectoriesToPackagesTest extends TestSuite {
     )(Cmd.Rename("a/b/S.scala", "S.scala"))
 
     // -----------------------------------------------------------------------------------------------------------------
-    "split" - test(
+    "split" - assertEngineSuccess(
       "a/b/S.scala" ->
         """package x.y
           |// ah
@@ -41,7 +42,7 @@ object AlignDirectoriesToPackagesTest extends TestSuite {
     )(Cmd.Rename("a/b/S.scala", "x/y/q/z/S.scala"))
 
     // -----------------------------------------------------------------------------------------------------------------
-    "multiple" - test(
+    "multiple" - assertEngineSuccess(
       "a/b/S.scala" ->
         """package x.y
           |class X
@@ -50,7 +51,7 @@ object AlignDirectoriesToPackagesTest extends TestSuite {
     )(Cmd.Rename("a/b/S.scala", "x/y/S.scala"))
 
     // -----------------------------------------------------------------------------------------------------------------
-    "pkgobj" - test(
+    "pkgobj" - assertEngineSuccess(
       "a/b/S.scala" ->
         """package x.y
           |import java.io._
@@ -62,25 +63,5 @@ object AlignDirectoriesToPackagesTest extends TestSuite {
           |""".stripMargin
     )(Cmd.Rename("a/b/S.scala", "x/y/ok/package.scala"))
 
-  }
-
-  // ===================================================================================================================
-
-  private def test(contents: (String, String)*)(expect: Cmd*)(implicit q: Line): Unit = {
-
-    // Test pass 1
-    val fs = FS(contents.iterator.map { case (f, c) => (path(f), c)}.toMap)
-    val cmds = {
-      val r = AlignDirectoriesToPackages(fs)
-      val e = expect.toVector
-      assert(r.errors.isEmpty)
-      val a = r.cmds.asVector
-      assertSeq(a, e)
-      r.cmds
-    }
-
-    // Test pass 2: idempotency
-    val fs2 = fs(cmds)
-    assertEq(AlignDirectoriesToPackages(fs2), Engine.Result.empty)
   }
 }
