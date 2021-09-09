@@ -28,27 +28,34 @@ object AlignFileToTypes extends Engine.Simple {
         (file.copy(file = s"$name.scala"), FlatRepr.toScala(fs))
       }
 
-    def noChangeNecessary =
-      newFiles.sizeCompare(1) == 0 && newFiles.head._1 == file
+    // A sole result means the content is unchanged
+    val soleResult: Option[(Path, String)] =
+      if (newFiles.sizeCompare(1) == 0)
+        Some(newFiles.head)
+      else
+        None
 
-    if (newFiles.isEmpty || noChangeNecessary)
-      Engine.Result.empty
-    else {
-      // TODO: might need to retain orig file
+    soleResult match {
+      case _ if newFiles.isEmpty => Engine.Result.empty
+      case Some((`file`, _))     => Engine.Result.empty
+      case Some((newFile, _))    => Cmd.Rename(from = file, to = newFile).toEngineResult
+      case _ =>
 
-      val firstCmd =
-        if (newFiles.contains(file))
-          Engine.Result.empty
-        else
-          Cmd.Delete(file).toEngineResult
+        val firstCmd =
+          if (newFiles.contains(file))
+            Engine.Result.empty
+          else
+            Cmd.Delete(file).toEngineResult
 
-      newFiles.foldLeft(firstCmd) { case (rs, (newFile, content)) =>
-        rs ++ Cmd.Write(newFile, content).toEngineResult
-      }
+        newFiles.foldLeft(firstCmd) { case (rs, (newFile, content)) =>
+          rs ++ Cmd.Write(newFile, content).toEngineResult
+        }
     }
   }
   
   private type ScanResults = Map[String, Vector[FlatRepr]]
+
+  private final val PackageObject = "package"
 
   @tailrec
   private def scan(rem      : Vector[FlatRepr],
@@ -115,6 +122,7 @@ object AlignFileToTypes extends Engine.Simple {
               case d: Defn.Class  => d.name.value
               case d: Defn.Object => d.name.value
               case d: Defn.Trait  => d.name.value
+              case _: Pkg.Object  => PackageObject
               case _              => ""
             }
 

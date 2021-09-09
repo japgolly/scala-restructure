@@ -113,5 +113,98 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
       ),
     )
 
+    // -----------------------------------------------------------------------------------------------------------------
+    "pkgObj" - assertEngineSuccess(
+      "dir/S.scala" ->
+        """package x.y
+          |
+          |// JAVA1
+          |import java.io._
+          |
+          |package object S {
+          |  type A = Int
+          |  object O
+          |  class C
+          |  def d = 1
+          |}
+          |""".stripMargin
+    )(
+      Cmd.Rename("dir/S.scala","dir/package.scala"),
+    )
+
+    // -----------------------------------------------------------------------------------------------------------------
+    "pkgObj2" - assertEngineSuccess(
+      "dir/S.scala" ->
+        """package x.y
+          |
+          |// JAVA1
+          |import java.io._
+          |
+          |package object S {
+          |  type A = Int
+          |  object O
+          |  class C
+          |  def d = 1
+          |}
+          |
+          |// JAVA2
+          |import java.net._
+          |
+          |package object Q
+          |""".stripMargin
+    )(
+      Cmd.Rename("dir/S.scala","dir/package.scala"),
+    )
+
+    // -----------------------------------------------------------------------------------------------------------------
+    "mix" - assertEngineSuccess(
+      "dir/S.scala" ->
+        """package x.y
+          |
+          |// JAVA1
+          |import java.io._
+          |
+          |package object Q
+          |package object S {
+          |  type A = Int
+          |  object O
+          |  class C
+          |  def d = 1
+          |}
+          |
+          |// JAVA2
+          |
+          |class Y
+          |""".stripMargin
+    )(
+      Cmd.Delete("dir/S.scala"),
+      Cmd.Write("dir/package.scala",
+        """package x.y
+          |
+          |// JAVA1
+          |import java.io._
+          |
+          |package object Q
+          |package object S {
+          |  type A = Int
+          |  object O
+          |  class C
+          |  def d = 1
+          |}
+          |""".stripMargin
+      ),
+      Cmd.Write("dir/Y.scala",
+        """package x.y
+          |
+          |// JAVA1
+          |import java.io._
+          |
+          |// JAVA2
+          |
+          |class Y
+          |""".stripMargin
+      ),
+    )
+
   }
 }
