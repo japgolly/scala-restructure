@@ -48,7 +48,12 @@ object AlignFileToTypes extends Engine.Simple {
             Cmd.Delete(file).toEngineResult
 
         newFiles.foldLeft(firstCmd) { case (rs, (newFile, content)) =>
-          rs ++ Cmd.Write(newFile, content).toEngineResult
+          val cmd: Cmd =
+            if (newFile == file)
+              Cmd.Update(file, content)
+            else
+              Cmd.Create(newFile, content)
+          rs ++ cmd.toEngineResult
         }
     }
   }

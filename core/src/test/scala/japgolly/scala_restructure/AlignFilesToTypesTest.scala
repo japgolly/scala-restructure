@@ -33,7 +33,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |""".stripMargin
     )(
       Cmd.Delete("dir/S.scala"),
-      Cmd.Write("dir/Yay.scala",
+      Cmd.Create("dir/Yay.scala",
         """// ah
           |package a.b
           |package c.d
@@ -52,7 +52,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |object Yay { def hehe = 1 }
           |""".stripMargin
       ),
-      Cmd.Write("dir/Z.scala",
+      Cmd.Create("dir/Z.scala",
         """// ah
           |package a.b
           |package c.d
@@ -86,7 +86,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |class S
           |""".stripMargin
     )(
-      Cmd.Write("dir/S.scala",
+      Cmd.Update("dir/S.scala",
         """package x
           |
           |// JAVA1
@@ -101,7 +101,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |class S
           |""".stripMargin
       ),
-      Cmd.Write("dir/Y.scala",
+      Cmd.Create("dir/Y.scala",
         """package x
           |
           |// JAVA1
@@ -158,7 +158,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |""".stripMargin
     )(
       Cmd.Delete("dir/S.scala"),
-      Cmd.Write("dir/s/package.scala",
+      Cmd.Create("dir/s/package.scala",
         """package x.y
           |
           |// JAVA1
@@ -172,7 +172,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |}
           |""".stripMargin
       ),
-      Cmd.Write("dir/q/package.scala",
+      Cmd.Create("dir/q/package.scala",
         """package x.y
           |
           |// JAVA1
@@ -185,7 +185,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |package object q
           |""".stripMargin
       ),
-      Cmd.Write("dir/Y.scala",
+      Cmd.Create("dir/Y.scala",
         """package x.y
           |
           |// JAVA1

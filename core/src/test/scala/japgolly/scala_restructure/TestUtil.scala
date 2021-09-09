@@ -29,7 +29,7 @@ object TestUtil extends japgolly.microlibs.testutil.TestUtil {
       }
 
       // Test pass 2: idempotency
-      val fs2 = fs(cmds)
+      val fs2 = fs(cmds).getOrThrow()
       assertEq("Pass 2: idempotency", engine(fs2), Engine.Result.empty)
     }
   }
