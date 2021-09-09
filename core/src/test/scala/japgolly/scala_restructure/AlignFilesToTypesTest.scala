@@ -10,61 +10,61 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
   override def tests = Tests {
 
     // -----------------------------------------------------------------------------------------------------------------
-//    "twoDiff" - assertEngineSuccess(
-//      "dir/S.scala" ->
-//        """// ah
-//          |package a.b
-//          |package c.d
-//          |
-//          |// JAVA!
-//          |import java.net._
-//          |
-//          |// yay
-//          |class Yay
-//          |
-//          |import java.io._
-//          |trait Z
-//          |
-//          |
-//          |/** blah1
-//          |  * blah2
-//          |  */
-//          |object Yay { def hehe = 1 }
-//          |""".stripMargin
-//    )(
-//      Cmd.Delete("dir/S.scala"),
-//      Cmd.Write("dir/Yay.scala",
-//        """// ah
-//          |package a.b
-//          |package c.d
-//          |
-//          |// JAVA!
-//          |import java.net._
-//          |
-//          |// yay
-//          |class Yay
-//          |
-//          |import java.io._
-//          |
-//          |/** blah1
-//          |  * blah2
-//          |  */
-//          |object Yay { def hehe = 1 }
-//          |""".stripMargin
-//      ),
-//      Cmd.Write("dir/Z.scala",
-//        """// ah
-//          |package a.b
-//          |package c.d
-//          |
-//          |// JAVA!
-//          |import java.net._
-//          |
-//          |import java.io._
-//          |trait Z
-//          |""".stripMargin
-//      ),
-//    )
+    "twoDiff" - assertEngineSuccess(
+      "dir/S.scala" ->
+        """// ah
+          |package a.b
+          |package c.d
+          |
+          |// JAVA!
+          |import java.net._
+          |
+          |// yay
+          |class Yay
+          |
+          |import java.io._
+          |trait Z
+          |
+          |
+          |/** blah1
+          |  * blah2
+          |  */
+          |object Yay { def hehe = 1 }
+          |""".stripMargin
+    )(
+      Cmd.Delete("dir/S.scala"),
+      Cmd.Write("dir/Yay.scala",
+        """// ah
+          |package a.b
+          |package c.d
+          |
+          |// JAVA!
+          |import java.net._
+          |
+          |// yay
+          |class Yay
+          |
+          |import java.io._
+          |
+          |/** blah1
+          |  * blah2
+          |  */
+          |object Yay { def hehe = 1 }
+          |""".stripMargin
+      ),
+      Cmd.Write("dir/Z.scala",
+        """// ah
+          |package a.b
+          |package c.d
+          |
+          |// JAVA!
+          |import java.net._
+          |
+          |import java.io._
+          |trait Z
+          |""".stripMargin
+      ),
+    )
 
     // -----------------------------------------------------------------------------------------------------------------
     "plusOne" - assertEngineSuccess(
