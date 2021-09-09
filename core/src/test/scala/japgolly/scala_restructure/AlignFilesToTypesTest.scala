@@ -121,7 +121,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |// JAVA1
           |import java.io._
           |
-          |package object S {
+          |package object s {
           |  type A = Int
           |  object O
           |  class C
@@ -129,31 +129,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |}
           |""".stripMargin
     )(
-      Cmd.Rename("dir/S.scala","dir/package.scala"),
-    )
-
-    // -----------------------------------------------------------------------------------------------------------------
-    "pkgObj2" - assertEngineSuccess(
-      "dir/S.scala" ->
-        """package x.y
-          |
-          |// JAVA1
-          |import java.io._
-          |
-          |package object S {
-          |  type A = Int
-          |  object O
-          |  class C
-          |  def d = 1
-          |}
-          |
-          |// JAVA2
-          |import java.net._
-          |
-          |package object Q
-          |""".stripMargin
-    )(
-      Cmd.Rename("dir/S.scala","dir/package.scala"),
+      Cmd.Rename("dir/S.scala", "dir/s/package.scala"),
     )
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -164,8 +140,7 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |// JAVA1
           |import java.io._
           |
-          |package object Q
-          |package object S {
+          |package object s {
           |  type A = Int
           |  object O
           |  class C
@@ -173,24 +148,41 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |}
           |
           |// JAVA2
+          |import java.net._
           |
+          |/** hehe */
+          |package object q
+          |
+          |// Why?
           |class Y
           |""".stripMargin
     )(
       Cmd.Delete("dir/S.scala"),
-      Cmd.Write("dir/package.scala",
+      Cmd.Write("dir/s/package.scala",
         """package x.y
           |
           |// JAVA1
           |import java.io._
           |
-          |package object Q
-          |package object S {
+          |package object s {
           |  type A = Int
           |  object O
           |  class C
           |  def d = 1
           |}
+          |""".stripMargin
+      ),
+      Cmd.Write("dir/q/package.scala",
+        """package x.y
+          |
+          |// JAVA1
+          |import java.io._
+          |
+          |// JAVA2
+          |import java.net._
+          |
+          |/** hehe */
+          |package object q
           |""".stripMargin
       ),
       Cmd.Write("dir/Y.scala",
@@ -200,7 +192,9 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |import java.io._
           |
           |// JAVA2
+          |import java.net._
           |
+          |// Why?
           |class Y
           |""".stripMargin
       ),

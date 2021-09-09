@@ -25,7 +25,7 @@ object AlignFileToTypes extends Engine.Simple {
 
     val newFiles: Map[Path, String] =
       scanResults.map { case (name, fs) =>
-        (file.copy(file = s"$name.scala"), FlatRepr.toScala(fs))
+        (updatedPath(file, name), FlatRepr.toScala(fs))
       }
 
     // A sole result means the content is unchanged
@@ -52,10 +52,24 @@ object AlignFileToTypes extends Engine.Simple {
         }
     }
   }
-  
+
   private type ScanResults = Map[String, Vector[FlatRepr]]
 
-  private final val PackageObject = "package"
+  private val dirAndFile = "^(.+)/([^/]+)$".r
+
+  private def updatedPath(file: Path, scanResultName: String): Path =
+    scanResultName match {
+
+      case dirAndFile(d, f) =>
+        import file.{dir => origDir}
+        if (origDir == d || origDir.endsWith("/" + d))
+          file.copy(file = s"$f.scala")
+        else
+          Path(s"$origDir/$d", s"$f.scala")
+
+      case _ =>
+        file.copy(file = s"$scanResultName.scala")
+    }
 
   @tailrec
   private def scan(rem      : Vector[FlatRepr],
@@ -122,7 +136,7 @@ object AlignFileToTypes extends Engine.Simple {
               case d: Defn.Class  => d.name.value
               case d: Defn.Object => d.name.value
               case d: Defn.Trait  => d.name.value
-              case _: Pkg.Object  => PackageObject
+              case p: Pkg.Object  => p.name.value + "/package"
               case _              => ""
             }
 
