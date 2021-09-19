@@ -4,8 +4,6 @@ import japgolly.scala_restructure._
 import java.nio.file.{Path => JPath, _}
 import scala.collection.immutable.ArraySeq
 
-class Ogm
-
 object App {
   sealed abstract class ExitCode(final val value: Int, final val fatal: Boolean)
   object ExitCode {
