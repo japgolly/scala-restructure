@@ -8,3 +8,4 @@ ThisBuild / shellPrompt  := ((s: State) => Project.extract(s).currentRef.project
 
 val root = Build.root
 val core = Build.core
+val cli  = Build.cli

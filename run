@@ -1,0 +1,4 @@
+#!/bin/bash
+
+root="$(dirname "$0")"
+exec java -jar "$root"/cli/target/scala-2.13/scala_restructure.jar "$@"

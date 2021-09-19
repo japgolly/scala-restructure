@@ -5,17 +5,26 @@ import scala.meta.parsers.Parsed
 
 trait Engine { self =>
 
-  def singleFile(file: Path, content: String): Engine.Result
+  def scanFile(file: Path, content: String): Engine.Result
 
-  final def apply(fs: FS): Engine.Result =
+  final def scanFS(fs: FS): Engine.Result =
     fs.asMap.foldLeft(Engine.Result.empty) { case (r, (path, content)) =>
-      r ++ singleFile(path, content)
+      r ++ scanFile(path, content)
     }
+
+  final def apply(res: Engine.Result, fs: FS): Engine.ApResult =
+    if (res.errors.nonEmpty)
+      Left(Left(res.errors))
+    else
+      fs(res.cmds) match {
+        case Right(fs2) => Right(fs2)
+        case Left(e)    => Left(Right(e))
+      }
 
   final def &(next: Engine): Engine =
     new Engine {
-      override def singleFile(file: Path, content: String): Engine.Result =
-        self.singleFile(file, content) ++ next.singleFile(file, content)
+      override def scanFile(file: Path, content: String): Engine.Result =
+        self.scanFile(file, content) ++ next.scanFile(file, content)
     }
 }
 
@@ -24,7 +33,7 @@ object Engine {
   trait Simple extends Engine {
     protected def process(file: Path, src: Source): Engine.Result
 
-    override final def singleFile(file: Path, content: String): Engine.Result =
+    override final def scanFile(file: Path, content: String): Engine.Result =
       content.parse[Source] match {
         case e: Parsed.Error =>
           Engine.Error(file, e.toString).toResult
@@ -48,4 +57,7 @@ object Engine {
     val empty: Result =
       apply(Cmds.empty, Set.empty)
   }
+
+  type ApError = Either[Set[Engine.Error], Set[FS.CmdApFailure]]
+  type ApResult = Either[ApError, FS]
 }

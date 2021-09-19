@@ -20,7 +20,7 @@ object TestUtil extends japgolly.microlibs.testutil.TestUtil {
       // Test pass 1
       val fs = FS(contents.iterator.map { case (f, c) => (path(f), c)}.toMap)
       val cmds = {
-        val r = engine(fs)
+        val r = engine.scanFS(fs)
         val e = expect.toVector
         assert(r.errors.isEmpty)
         val a = r.cmds.asVector
@@ -30,7 +30,7 @@ object TestUtil extends japgolly.microlibs.testutil.TestUtil {
 
       // Test pass 2: idempotency
       val fs2 = fs(cmds).getOrThrow()
-      assertEq("Pass 2: idempotency", engine(fs2), Engine.Result.empty)
+      assertEq("Pass 2: idempotency", engine.scanFS(fs2), Engine.Result.empty)
     }
   }
 

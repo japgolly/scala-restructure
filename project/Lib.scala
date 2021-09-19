@@ -1,6 +1,5 @@
 import sbt._
 import sbt.Keys._
-import com.timushev.sbt.updates.UpdatesPlugin.autoImport._
 import com.typesafe.sbt.GitPlugin.autoImport._
 import scala.concurrent.duration._
 import scalafix.sbt.ScalafixPlugin

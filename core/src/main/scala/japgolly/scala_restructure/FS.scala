@@ -1,9 +1,18 @@
 package japgolly.scala_restructure
 
-final case class FS(asMap: Map[Path, String]) {
-  import FS.CmdApFailure
+import scala.annotation.tailrec
 
-  type ApplyResult = Either[Set[CmdApFailure], FS]
+final case class FS(asMap: Map[Path, String]) {
+  import FS.{ApplyResult, CmdApFailure}
+
+  @inline def isEmpty = asMap.isEmpty
+  @inline def nonEmpty = asMap.nonEmpty
+  @inline def size = asMap.size
+
+  def apply(cmds: Cmds): ApplyResult =
+    cmds.asVector.foldLeft[ApplyResult](Right(this)) { (res, cmd) =>
+      res.flatMap(_(cmd))
+    }
 
   def apply(cmd: Cmd): ApplyResult = {
 
@@ -50,13 +59,41 @@ final case class FS(asMap: Map[Path, String]) {
   private def validateDoesntExist(file: Path): Option[CmdApFailure.FileAlreadyExists] =
     Option.when(asMap.contains(file))(CmdApFailure.FileAlreadyExists(file))
 
-  def apply(cmds: Cmds): ApplyResult =
-    cmds.asVector.foldLeft[ApplyResult](Right(this)) { (res, cmd) =>
-      res.flatMap(_(cmd))
+  lazy val commonRoot: String = {
+    if (asMap.isEmpty)
+      ""
+    else {
+      @tailrec
+      def go(p: String, root: String): String =
+        if (p.isEmpty)
+          root
+        else {
+          val newSuffix: String =
+            p.indexOf('/') match {
+              case -1 => p
+              case i  => p.take(i + 1)
+            }
+          val newRoot = root + newSuffix
+          if (asMap.keysIterator.forall(_.dir.startsWith(newRoot)))
+            go(p.drop(newSuffix.length), newRoot)
+          else
+            root
+        }
+      val suffix = go(asMap.keysIterator.next().dir, "")
+      if (suffix.nonEmpty && suffix.last != '/')
+        suffix + "/"
+      else
+        suffix
     }
+  }
+
+  def ++(fs2: FS): FS =
+    FS(asMap ++ fs2.asMap)
 }
 
 object FS {
+  type ApplyResult = Either[Set[CmdApFailure], FS]
+
   def empty: FS =
     apply(Map.empty)
 

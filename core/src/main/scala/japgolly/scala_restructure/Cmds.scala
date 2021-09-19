@@ -21,6 +21,9 @@ final case class Cmds(asVector: Vector[Cmd]) {
 
   def toEngineResult: Engine.Result =
     Engine.Result.empty.copy(cmds = this)
+
+  def fileIterator(): Iterator[Path] =
+    asVector.iterator.flatMap(_.files)
 }
 
 object Cmds {
