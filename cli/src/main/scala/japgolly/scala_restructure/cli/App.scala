@@ -166,7 +166,10 @@ final class App(opts: Options) {
     // Done
     val affectedFiles = engineResult.cmds.fileIterator().toSet.size
     if (affectedFiles > 0)
-      log(s"Modified $affectedFiles files in $root")
+      log {
+        val prefix = if (opts.dryRun) "[DRY-RUN] " else ""
+        s"${prefix}Modified $affectedFiles files in $root"
+      }
   }
 
   private def formatCmd(commonRoot: String, cmd: Cmd): String = {
