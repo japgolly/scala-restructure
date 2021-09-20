@@ -5,17 +5,17 @@ import scala.meta.parsers.Parsed
 
 trait Engine { self =>
 
-  def scanFile(file: Path, content: String): Engine.Result
+  def scanFile(file: Path, content: String, dialect: Dialect): Engine.Result
 
-  final def scanFS(fs: FS): Engine.Result =
+  final def scanFS(fs: FS, dialect: Dialect): Engine.Result =
     fs.asMap.foldLeft(Engine.Result.empty) { case (r, (path, content)) =>
-      r ++ scanFile(path, content)
+      r ++ scanFile(path, content, dialect)
     }
 
   final def &(next: Engine): Engine =
     new Engine {
-      override def scanFile(file: Path, content: String): Engine.Result =
-        self.scanFile(file, content) ++ next.scanFile(file, content)
+      override def scanFile(file: Path, content: String, dialect: Dialect): Engine.Result =
+        self.scanFile(file, content, dialect) ++ next.scanFile(file, content, dialect)
     }
 }
 
@@ -24,8 +24,8 @@ object Engine {
   trait Simple extends Engine {
     protected def process(file: Path, src: Source): Engine.Result
 
-    override final def scanFile(file: Path, content: String): Engine.Result =
-      content.parse[Source] match {
+    override final def scanFile(file: Path, content: String, dialect: Dialect): Engine.Result =
+      dialect(content).parse[Source] match {
         case e: Parsed.Error =>
           Engine.Error(file, e.toString).toResult
 

@@ -2,8 +2,9 @@ package japgolly.scala_restructure
 
 final case class Cmds(asVector: Vector[Cmd]) {
 
-  @inline def isEmpty =
-    asVector.isEmpty
+  @inline def isEmpty = asVector.isEmpty
+  @inline def nonEmpty = asVector.nonEmpty
+  @inline def length = asVector.length
 
   def append(cmds: Cmd*): Cmds =
     Cmds(asVector ++ cmds)

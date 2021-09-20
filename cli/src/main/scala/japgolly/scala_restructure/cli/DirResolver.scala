@@ -72,7 +72,7 @@ object DirResolver {
         )
         .iterator
         .map { case (p, _) => p }
-        .filterNot(_.toString contains "/target/scala-")
+        .filterNot(p => blacklist(p.toString))
         .filter(_.toIO.isDirectory())
         .filter(p => matcher(p.toNIO))
         .toArray
@@ -80,4 +80,16 @@ object DirResolver {
 
     ArraySeq.unsafeWrapArray(dirs.array)
   }
+
+  private val blacklistFragments = List[String](
+    "/.bloop/",
+    "/.bsp/",
+    "/.idea/",
+    "/.metals/",
+    "/.vscode/",
+    "/target/scala-",
+  )
+
+  private def blacklist(dir: String): Boolean =
+    blacklistFragments.exists(dir.contains)
 }

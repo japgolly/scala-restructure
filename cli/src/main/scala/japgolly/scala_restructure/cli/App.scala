@@ -1,6 +1,7 @@
 package japgolly.scala_restructure.cli
 
 import japgolly.scala_restructure._
+import scala.meta.{Dialect, dialects}
 
 object App {
   sealed abstract class ExitCode(final val value: Int, final val fatal: Boolean)
@@ -71,7 +72,6 @@ final class App(opts: Options) {
           val s = os.read(p)
           fs.updated(f, s)
         }
-
     FS(fsAsMap)
   }
 
@@ -87,8 +87,21 @@ final class App(opts: Options) {
     if (fs.isEmpty)
       return
 
+    // Guess the dialect (at least for now)
+    val dialect: Dialect = {
+      val d = root.toString
+      if (d.contains("scala-3")) dialects.Scala3
+      else if (d.contains("scala-2.13")) dialects.Scala213
+      else if (d.contains("scala-2.12")) dialects.Scala212
+      else if (d.contains("scala-2.11")) dialects.Scala211
+      else if (d.contains("scala-2.10")) dialects.Scala210
+      else dialects.Scala
+    }
+
     // Scan and process files in memory
-    val engineResult = engine.scanFS(fs)
+    val engineResult = engine.scanFS(fs, dialect)
+    if (engineResult.cmds.nonEmpty)
+      debug(s"  Generated ${engineResult.cmds.length} changes to apply")
     if (engineResult.errors.nonEmpty) {
       val errMsgs =
         engineResult.errors
@@ -103,7 +116,6 @@ final class App(opts: Options) {
     val fs2: FS =
       fs(engineResult.cmds) match {
         case Right(fs2) =>
-          debug("  Operations applied successfully in-memory")
           fs2
 
         case Left(e) =>
@@ -137,7 +149,6 @@ final class App(opts: Options) {
     implicit val pwd = Path.Pwd(root)
     val cmds = engineResult.cmds.asVector
     val commonRoot = (fs ++ fs2).commonRoot
-    debug(s"  Generated ${cmds.length} changes to apply")
     val count = cmds.length
     for (i <- cmds.indices) {
       val cmd = cmds(i)
