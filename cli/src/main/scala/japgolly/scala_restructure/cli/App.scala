@@ -1,8 +1,6 @@
 package japgolly.scala_restructure.cli
 
 import japgolly.scala_restructure._
-import java.nio.file.{Path => JPath, _}
-import scala.collection.immutable.ArraySeq
 
 object App {
   sealed abstract class ExitCode(final val value: Int, final val fatal: Boolean)
@@ -45,48 +43,17 @@ final class App(opts: Options) {
     }
 
   def run(): Unit = {
-    val dirs = collectDirs()
-    if (dirs.isEmpty)
-      error(NoDirectories)("No directories found.")
-
-    // TODO:
     val engine: Engine =
-      AlignFileToTypes & AlignDirectoriesToPackages
+      opts.engine()
 
-    for (d <- dirs)
-      runOnTree(engine, d)
-  }
+    for (glob <- opts.dirGlobs) {
+      val dirs = DirResolver(glob)
+      if (dirs.isEmpty)
+        error(NoDirectories)("No directories found.")
 
-  /** Find all relevant Scala source directories. */
-  private def collectDirs(): ArraySeq[os.Path] = {
-    val dirMatchesGlobs: JPath => Boolean = {
-      val FS = FileSystems.getDefault()
-      val matchers = opts.dirGlobs.map { g =>
-        try
-          FS.getPathMatcher("glob:" + g)
-        catch {
-          case e: Throwable =>
-            throw new IllegalArgumentException("Invalid glob: " + g, e) // TODO: Handle nicely
-        }
-      }
-      p => matchers.exists(_.matches(p))
+      for (dir <- dirs)
+        runOnTree(engine, dir)
     }
-
-    val dirs =
-      os.walk.attrs(
-          path = os.pwd,
-          skip = (_, s) => !s.isDir,
-          followLinks = true,
-          includeTarget = false,
-        )
-        .iterator
-        .map { case (p, _) => p }
-        .filterNot(_.toString contains "/target/scala-")
-        .filter(p => dirMatchesGlobs(p.toNIO))
-        .toArray
-        .sortInPlace()
-
-    ArraySeq.unsafeWrapArray(dirs.array)
   }
 
   private def loadAllScalaFilesFromDisk(root: os.Path): FS = {
