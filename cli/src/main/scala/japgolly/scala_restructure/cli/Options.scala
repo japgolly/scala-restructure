@@ -11,8 +11,8 @@ final case class Options(
     verbose     : Boolean        = false,
 ) {
 
-  def engine(): Engine =
-    engineDefs.iterator.map(_.engine).reduce(_ & _)
+  lazy val engines: Vector[Engine] =
+    engineDefs.toVector.sortBy(_.priority).map(_.engine)
 
   def withDefaults: Options = {
     import Options.Default

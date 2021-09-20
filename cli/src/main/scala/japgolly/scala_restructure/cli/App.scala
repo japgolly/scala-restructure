@@ -46,16 +46,13 @@ final class App(opts: Options) {
     }
 
   def run(): Unit = {
-    val engine: Engine =
-      opts.engine()
-
     for (glob <- opts.dirGlobs) {
       val dirs = DirResolver(glob)
       if (dirs.isEmpty)
         error(NoDirectories)("No directories found.")
 
       for (dir <- dirs)
-        runOnTree(engine, dir)
+        runOnTree(dir)
     }
   }
 
@@ -75,7 +72,7 @@ final class App(opts: Options) {
     FS(fsAsMap)
   }
 
-  private def runOnTree(engine: Engine, root: os.Path): Unit = {
+  private def runOnTree(root: os.Path): Unit = {
 
     def badPath(p: Path) =
       s"$RED$root/${p.fullPath}$RESET"
@@ -99,7 +96,13 @@ final class App(opts: Options) {
     }
 
     // Scan and process files in memory
-    val engineResult = engine.scanFS(fs, dialect)
+    val engineResult =
+      opts.engines.foldLeft((fs, Engine.Result.empty)) { case ((fs1, res1), e) =>
+        val res2 = e.scanFS(fs1, dialect)
+        val fs2 = fs1(res2.cmds).getOrElse(fs1) // don't worry about errors, it'll be rechecked below
+        (fs2, res1 ++ res2)
+      }._2
+
     if (engineResult.cmds.nonEmpty)
       debug(s"  Generated ${engineResult.cmds.length} changes to apply")
     if (engineResult.errors.nonEmpty) {

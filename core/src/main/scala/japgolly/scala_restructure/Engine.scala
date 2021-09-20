@@ -11,12 +11,6 @@ trait Engine { self =>
     fs.asMap.foldLeft(Engine.Result.empty) { case (r, (path, content)) =>
       r ++ scanFile(path, content, dialect)
     }
-
-  final def &(next: Engine): Engine =
-    new Engine {
-      override def scanFile(file: Path, content: String, dialect: Dialect): Engine.Result =
-        self.scanFile(file, content, dialect) ++ next.scanFile(file, content, dialect)
-    }
 }
 
 object Engine {
