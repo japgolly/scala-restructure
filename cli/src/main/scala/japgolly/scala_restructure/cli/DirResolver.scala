@@ -19,7 +19,18 @@ object DirResolver {
     parts.indexWhere(isGlob) match {
       case -1 =>
         // No glob specified
-        ArraySeq(partsToAbsPath(parts))
+        val root = partsToAbsPath(parts)
+        val paths =
+          Options.Default.dirGlobs
+            .iterator
+            .flatMap(glob(root, _))
+            .toArray
+            .sortInPlaceBy(_.toString)
+            .array
+        if (paths.nonEmpty)
+          ArraySeq.unsafeWrapArray(paths)
+        else
+          ArraySeq(root)
 
       case i =>
         // It's a glob! Watch out!

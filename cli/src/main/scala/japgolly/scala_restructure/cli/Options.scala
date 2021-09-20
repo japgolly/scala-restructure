@@ -27,7 +27,7 @@ final case class Options(
 
 object Options {
 
-  private[Options] object Default {
+  object Default {
 
     def dirGlobs = Seq[String](
       "**/src/*/scala*",
