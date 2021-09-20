@@ -12,15 +12,6 @@ trait Engine { self =>
       r ++ scanFile(path, content)
     }
 
-  final def apply(res: Engine.Result, fs: FS): Engine.ApResult =
-    if (res.errors.nonEmpty)
-      Left(Left(res.errors))
-    else
-      fs(res.cmds) match {
-        case Right(fs2) => Right(fs2)
-        case Left(e)    => Left(Right(e))
-      }
-
   final def &(next: Engine): Engine =
     new Engine {
       override def scanFile(file: Path, content: String): Engine.Result =

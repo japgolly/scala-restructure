@@ -5,11 +5,13 @@ import japgolly.scala_restructure._
 object App {
   sealed abstract class ExitCode(final val value: Int, final val fatal: Boolean)
   object ExitCode {
-    case object NoDirectories  extends ExitCode(2, true)
+    case object NoDirectories  extends ExitCode(2, false)
     case object FailedToDelete extends ExitCode(3, false)
     case object FileExists     extends ExitCode(4, false)
     case object FileNotFound   extends ExitCode(5, false)
     case object IoError        extends ExitCode(6, false)
+    case object FailedToParse  extends ExitCode(7, false)
+    case object FailedToApply  extends ExitCode(8, false)
   }
 }
 
@@ -75,6 +77,9 @@ final class App(opts: Options) {
 
   private def runOnTree(engine: Engine, root: os.Path): Unit = {
 
+    def badPath(p: Path) =
+      s"$RED$root/${p.fullPath}$RESET"
+
     // Collect files
     debug(s"Scanning $root ...")
     val fs = loadAllScalaFilesFromDisk(root)
@@ -82,23 +87,56 @@ final class App(opts: Options) {
     if (fs.isEmpty)
       return
 
-    // Perform fixes in memory
+    // Scan and process files in memory
     val engineResult = engine.scanFS(fs)
-    val commonRoot: String =
-      engine(engineResult, fs) match {
+    if (engineResult.errors.nonEmpty) {
+      val errMsgs =
+        engineResult.errors
+          .iterator
+          .map(e => s"Failed to parse ${badPath(e.file)}: ${e.msg}")
+          .toArray
+          .sortInPlace()
+      error(FailedToParse)(errMsgs.mkString("\n"))
+    }
+
+    // Perform fixes in memory first
+    val fs2: FS =
+      fs(engineResult.cmds) match {
         case Right(fs2) =>
-          debug("  Opperations applied successfully in-memory")
-          (fs ++ fs2).commonRoot
+          debug("  Operations applied successfully in-memory")
+          fs2
 
         case Left(e) =>
-          // TODO: HANDLE ERRORS!
-          println("  FAILED: " + e)
+          import FS.CmdApFailure._
+          def cantRename(c: Cmd.Rename) = {
+            import c._
+            val desc: String =
+              from.unify(to) match {
+                case None    => s"${badPath(from)} => ${badPath(to)}"
+                case Some(u) => root.toString + "/" + u.desc(s"$RESET{$RED", s"$RESET => $RED", s"$RESET}")
+              }
+            s"Can't rename $desc"
+          }
+          val errMsgs =
+            e.iterator
+              .map {
+                case CreateFailedFileExists    (f, _) => s"Can't create ${badPath(f)} - already exists"
+                case DeleteFailedFileNotFound  (f)    => s"Can't delete ${badPath(f)} - file not found"
+                case RenameFailedSourceNotFound(_, c) => s"${cantRename(c)} - source not found"
+                case RenameFailedTargetExists  (_, c) => s"${cantRename(c)} - target already exists"
+                case UpdateFailedFileNotFound  (f, _) => s"Can't update ${badPath(f)} - file not found"
+              }
+              .toArray
+              .sortInPlace()
+              .mapInPlace("Failed to apply fix. " + _)
+          error(FailedToApply)(errMsgs.mkString("\n"))
           return
       }
 
     // Go through the commands
     implicit val pwd = Path.Pwd(root)
     val cmds = engineResult.cmds.asVector
+    val commonRoot = (fs ++ fs2).commonRoot
     debug(s"  Generated ${cmds.length} changes to apply")
     val count = cmds.length
     for (i <- cmds.indices) {
