@@ -47,13 +47,15 @@ object AlignFileToTypes extends Engine.Simple {
           else
             Cmd.Delete(file).toEngineResult
 
-        newFiles.foldLeft(firstCmd) { case (rs, (newFile, content)) =>
-          val cmd: Cmd =
-            if (newFile == file)
-              Cmd.Update(file, content)
-            else
-              Cmd.Create(newFile, content)
-          rs ++ cmd.toEngineResult
+        val creations =
+          (newFiles - file).foldLeft(firstCmd) { case (rs, (newFile, content)) =>
+            val cmd = Cmd.Create(newFile, content)
+            rs ++ cmd.toEngineResult
+          }
+
+        newFiles.get(file) match {
+          case None    => creations
+          case Some(c) => creations ++ Cmd.Update(file, c).toEngineResult
         }
     }
   }
