@@ -28,7 +28,19 @@ object TestUtil extends japgolly.microlibs.testutil.TestUtil {
         val e = expect.toVector
         assert(r.errors.isEmpty)
         val a = r.cmds.asVector
+
+        // Assert commands without content
+        val noContent: Cmd => Cmd = {
+          case c: Cmd.Create => c.copy(content = "-")
+          case c: Cmd.Update => c.copy(content = "-")
+          case c: Cmd.Delete => c
+          case c: Cmd.Rename => c
+        }
+        assertSeq(a.map(noContent), e.map(noContent))
+
+        // Assert commands with content
         assertSeq(a, e)
+
         r.cmds
       }
 

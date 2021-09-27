@@ -20,6 +20,7 @@ object Build {
     .configure(defaultSettings(tests = true))
     .settings(
       libraryDependencies ++= Seq(
+        Dep.microlibsStdlibExt.value,
         Dep.osLib.value,
         Dep.scalameta.value,
       ),
@@ -39,7 +40,6 @@ object Build {
       ),
       buildInfoPackage := "japgolly.scala_restructure.cli",
       libraryDependencies ++= Seq(
-        Dep.microlibsStdlibExt.value,
         Dep.scopt.value,
       ),
       assembly / logLevel := Level.Info,

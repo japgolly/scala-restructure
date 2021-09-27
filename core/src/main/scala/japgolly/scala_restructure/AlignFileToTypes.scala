@@ -1,5 +1,7 @@
 package japgolly.scala_restructure
 
+import japgolly.microlibs.stdlib_ext.EscapeUtils.quote
+import japgolly.scala_restructure.ScalaMetaUtil.Implicits._
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.meta._
@@ -11,9 +13,19 @@ object AlignFileToTypes extends Engine.Simple {
 
   override def process(file: Path, src: Source): Engine.Result = {
 
+    val flatReprs = FlatRepr.parse(src)
+
+    if (debug) {
+      println(sep)
+      val l = flatReprs.length
+      for (i <- flatReprs.indices)
+        println(s"[${i+1}/$l] ${flatReprs(i)}")
+      println()
+    }
+
     val scanResults =
       scan(
-        rem       = FlatRepr.parse(src),
+        rem       = flatReprs,
         ctxName   = "",
         ctx       = Vector.empty,
         blank     = Vector.empty,
@@ -22,6 +34,9 @@ object AlignFileToTypes extends Engine.Simple {
         processed = Set.empty,
         res       = Map.empty,
       )
+
+    if (debug)
+      println(sep)
 
     val newFiles: Map[Path, String] =
       scanResults.map { case (name, fs) =>
@@ -78,6 +93,11 @@ object AlignFileToTypes extends Engine.Simple {
         file.copy(file = s"$scanResultName.scala")
     }
 
+  private final val debug = false
+  private final val debugFlatRepr = debug && false
+  private final val debugScan = debug && true
+  private def sep = "="*120
+
   @tailrec
   private def scan(rem      : Vector[FlatRepr],
                    ctxName  : String,
@@ -98,7 +118,18 @@ object AlignFileToTypes extends Engine.Simple {
 
     if (rem.isEmpty)
       res
-    else
+    else {
+
+      if (debugScan) {
+        println(rem.head)
+        println(s"  ctxName  : $ctxName")
+        println(s"  ctx      : $ctx")
+        println(s"  blank    : $blank")
+        println(s"  keepBlank: $keepBlank")
+        println(s"  comment  : $comment")
+        println(s"  processed: $processed")
+      }
+
       rem.head match {
 
         case c: FlatRepr.Comment =>
@@ -196,6 +227,7 @@ object AlignFileToTypes extends Engine.Simple {
             )
           }
       }
+    }
   }
 
   private def separateType(name      : String,
@@ -234,6 +266,12 @@ object AlignFileToTypes extends Engine.Simple {
     import scala.meta.{Token => TokenAst}
 
     final case class Stmt(value: Stat, parent: Option[Pkg]) extends FlatRepr {
+      override def toString = {
+        val v = quote(value.toString)
+        val p = parent.map(_.toString.linesIterator.filter(_.startsWith("package ")).mkString("; "))
+        s"Stmt($v, $p)"
+      }
+
       override def pos = value.pos
 
       override val lastToken: TokenAst = {
@@ -246,18 +284,26 @@ object AlignFileToTypes extends Engine.Simple {
     }
 
     final case class Comment(value: TokenAst, eol: Option[TokenAst]) extends FlatRepr {
+      override def toString = {
+        val v = quote(value.toString)
+        val e = eol.map(_.toString).map(quote)
+        s"Comment($v, $e)"
+      }
+
       override def pos       = value.pos
       override def lastToken = value
       val asString           = eol.fold(value.toString)(value.toString + _)
     }
 
     final case class BlankLine(value: TokenAst) extends FlatRepr {
+      override def toString  = "BlankLine"
       override def pos       = value.pos
       override def lastToken = value
     }
 
     def parse(src: Source): Vector[FlatRepr] = {
       val results = mutable.ArrayBuffer.empty[FlatRepr]
+      val scopes = mutable.ArrayBuffer.empty[Position]
 
       def getStmts(parent: Option[Pkg], stmts: List[Stat]): Unit =
         stmts.foreach {
@@ -268,6 +314,7 @@ object AlignFileToTypes extends Engine.Simple {
 
           case s =>
             results += FlatRepr.Stmt(s, parent)
+            scopes += s.pos
         }
 
       getStmts(None, src.stats)
@@ -278,23 +325,31 @@ object AlignFileToTypes extends Engine.Simple {
       while (tokens.nonEmpty) {
         val token = tokens.head
         tokens = tokens.tail
-        token match {
 
-          case c: TokenAst.Comment =>
-            tokens match {
-              case (eol: TokenAst.LF) :: tokensTail =>
-                tokens = tokensTail
-                results += FlatRepr.Comment(c, Some(eol))
-              case _=>
-                results += FlatRepr.Comment(c, None)
-            }
+        val tokenInStmt =
+          scopes.exists(token.pos.isWithin)
 
-          case t: TokenAst.LF =>
-            if (!ignoreTokens.contains(t.pos.start))
-              results += FlatRepr.BlankLine(t)
+        if (debugFlatRepr)
+          println(s"[searching for non-stmts] inStmt=$tokenInStmt: ${quote("" + token)}")
 
-          case _ =>
-        }
+        if (!tokenInStmt)
+          token match {
+
+            case c: TokenAst.Comment =>
+              tokens match {
+                case (eol: TokenAst.LF) :: tokensTail =>
+                  tokens = tokensTail
+                  results += FlatRepr.Comment(c, Some(eol))
+                case _=>
+                  results += FlatRepr.Comment(c, None)
+              }
+
+            case t: TokenAst.LF =>
+              if (!ignoreTokens.contains(t.pos.start))
+                results += FlatRepr.BlankLine(t)
+
+            case _ =>
+          }
       }
 
       results.sortInPlaceBy(_.pos).toVector

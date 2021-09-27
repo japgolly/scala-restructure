@@ -133,6 +133,126 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
     )
 
     // -----------------------------------------------------------------------------------------------------------------
+    "nested1" - assertEngineSuccess(
+      "dir/A.scala" ->
+        """package x.y
+          |
+          |/** a */
+          |class A {
+          |  /** a1 */
+          |}
+          |
+          |/** b */
+          |class B
+          |""".stripMargin
+    )(
+      Cmd.Create("dir/B.scala",
+        """package x.y
+          |
+          |/** b */
+          |class B
+          |""".stripMargin
+      ),
+      Cmd.Update("dir/A.scala",
+        """package x.y
+          |
+          |/** a */
+          |class A {
+          |  /** a1 */
+          |}
+          |""".stripMargin
+      ),
+    )
+
+    // -----------------------------------------------------------------------------------------------------------------
+    "nested2" - assertEngineSuccess(
+      "dir/A.scala" ->
+        """package x.y
+          |
+          |// this is A0
+          |
+          |/** a */
+          |
+          |class A {
+          |  // this is A1
+          |  /** a1 */
+          |  def a1 = 1
+          |}
+          |
+          |// this is B0
+          |
+          |/** b */
+          |
+          |class B {
+          |  // this is B1
+          |  /** b1 */
+          |  def b1 = 1
+          |}
+          |
+          |// c
+          |class C {
+          |  // c1
+          |  def c1 = 1
+          |}
+          |
+          |/** D */
+          |class D {
+          |  /** d1 */
+          |  def d1 = 1
+          |}
+          |""".stripMargin
+    )(
+      Cmd.Create("dir/B.scala",
+        """package x.y
+          |
+          |// this is B0
+          |
+          |/** b */
+          |
+          |class B {
+          |  // this is B1
+          |  /** b1 */
+          |  def b1 = 1
+          |}
+          |""".stripMargin
+      ),
+      Cmd.Create("dir/C.scala",
+        """package x.y
+          |
+          |// c
+          |class C {
+          |  // c1
+          |  def c1 = 1
+          |}
+          |""".stripMargin
+      ),
+      Cmd.Create("dir/D.scala",
+        """package x.y
+          |
+          |/** D */
+          |class D {
+          |  /** d1 */
+          |  def d1 = 1
+          |}
+          |""".stripMargin
+      ),
+      Cmd.Update("dir/A.scala",
+        """package x.y
+          |
+          |// this is A0
+          |
+          |/** a */
+          |
+          |class A {
+          |  // this is A1
+          |  /** a1 */
+          |  def a1 = 1
+          |}
+          |""".stripMargin
+      ),
+    )
+
+    // -----------------------------------------------------------------------------------------------------------------
     "mix" - assertEngineSuccess(
       "dir/S.scala" ->
         """package x.y

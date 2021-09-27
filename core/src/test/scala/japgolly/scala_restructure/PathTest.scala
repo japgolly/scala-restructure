@@ -1,8 +1,8 @@
 package japgolly.scala_restructure
 
 import japgolly.microlibs.testutil.TestUtil._
-import utest._
 import sourcecode.Line
+import utest._
 
 object PathTest extends TestSuite {
 
