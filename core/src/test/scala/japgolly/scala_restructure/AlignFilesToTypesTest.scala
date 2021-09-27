@@ -86,6 +86,16 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |class S
           |""".stripMargin
     )(
+      Cmd.Create("dir/Y.scala",
+        """package x
+          |
+          |// JAVA1
+          |import java.io._
+          |
+          |/** omg */
+          |object Y
+          |""".stripMargin
+      ),
       Cmd.Update("dir/S.scala",
         """package x
           |
@@ -99,16 +109,6 @@ object AlignFilesToTypesTest extends TestSuite with EngineTester {
           |// JAVA2
           |
           |class S
-          |""".stripMargin
-      ),
-      Cmd.Create("dir/Y.scala",
-        """package x
-          |
-          |// JAVA1
-          |import java.io._
-          |
-          |/** omg */
-          |object Y
           |""".stripMargin
       ),
     )
